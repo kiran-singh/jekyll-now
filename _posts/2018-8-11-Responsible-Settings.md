@@ -9,33 +9,36 @@ The .Net config settings are usually left to individual developers and mostly ta
 // The old method
 var timout = int.Parse(ConfigurationManager.AppSettings["Timeout"]);
 
-// Modern but still not great
+// Newer
 var apiId = Guid.Parse(_configManager.AppSetting("ApiId"));
 ```
 
-In both cases the resulting value is a string and will have to be converted to the type of variable if different.
+In both cases the resulting string value has to be converted to the type of variable if different.
 
 
-Ideally this type of manipulation shouldn't be left to the individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
+Ideally this manipulation shouldn't be left to individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
 
 
-A better way would be a class like the ```Settings``` class in code below that checks for the availability of the settings and sets them up as needed.  
+A better way would be a class like the ```Settings``` class in code below that validates availability of the settings and sets them up as needed.   
+This is for **.Net Core** but similar class can be created for other versions of .Net.
 
 
-This can either injected or preferably just called on startup by the IOC container and the required value injected into the controller or service that needs them.  
+This class can be either injected or preferably just called on startup by the IOC container and the required config value injected into the controller or service that needs them.  
 
 
-The constructor uses reflection to get the names & types of the class properties and throws an exception if any setting is missing or if any of the values are default for the type.  
+__The constructor uses reflection to get the names & types of the its class' properties and throws an exception if any setting is missing or if any of the values are default for the type.__
 
 ```csharp
 public class Settings
 {
-    public Settings(IConfiguration configDictionary) 
+    public Settings(IConfiguration dict) 
     {
-        var declaredProperties = GetType().GetTypeInfo().DeclaredProperties.ToList();
+        var declaredProperties = 
+            GetType().GetTypeInfo().DeclaredProperties.ToList();
 
-        var missingSettings = (from propertyInfo in declaredProperties
-            where string.IsNullOrWhiteSpace(configDictionary[propertyInfo.Name])
+        var missingSettings = 
+            (from propertyInfo in declaredProperties
+            where string.IsNullOrWhiteSpace(dict[propertyInfo.Name])
             select propertyInfo.Name).ToList();
 
         if (missingSettings.Any())
@@ -48,24 +51,27 @@ public class Settings
         {
             if (propertyInfo.PropertyType == typeof(int))
             {
-                var value = configDictionary[propertyInfo.Name].ToInt();
+                var value = dict[propertyInfo.Name].ToInt();
                 
                 if(value == default(int))
                     invalidSettings.Add(propertyInfo.Name);
-                
-                propertyInfo.SetValue(this, value);
+                else
+                    propertyInfo.SetValue(this, value);
             }
-
-            // Evaluate bool, Guid etc
             
+            // Parse other types required: 
+            // else if(propertyInfo.PropertyType == typeof(bool))...
+            // else if(propertyInfo.PropertyType == typeof(Guid))...
+            // ...
+
             else
             {
-                var value = configDictionary[propertyInfo.Name];
+                var value = dict[propertyInfo.Name];
                 
                 if(string.IsNullOrWhiteSpace(value))
                     invalidSettings.Add(propertyInfo.Name);
-                
-                propertyInfo.SetValue(this, value);
+                else
+                    propertyInfo.SetValue(this, value);
             }
             
             if(invalidSettings.Any())
@@ -84,7 +90,8 @@ public class Settings
 }
 ```
 
-```ToInt()``` is a string extension method that uses the ```TryParse()``` method to parse the integer safely as shown below. Similar methods (```ToBool()```, ```ToGuid()``` etc) can be used for other value types.
+```ToInt()``` is a string extension method that uses the ```TryParse()``` method to parse the integer safely as shown below.   
+Similar methods (```ToBool()```, ```ToGuid()``` etc) can be used for other value types.
 ```csharp
 public static int ToInt(this string input)
 {
@@ -93,4 +100,4 @@ public static int ToInt(this string input)
     return result;
 }
 ```
-The above code can ensure that the application starts up only when its application settings are setup with the valid values and avoid code duplication, usage of setting names into classes etc.
+The above code ensures that the application starts up only when its application settings are setup with the valid values and avoids code duplication, usage of setting names into classes etc.
