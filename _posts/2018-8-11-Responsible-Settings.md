@@ -3,7 +3,7 @@ layout: post
 title: Responsible Settings
 ---
 
-The config settings are usually left to individual developers and mostly tackled by calling a static config manager or passing in an interface of the encapsulating wrapper.  
+The .Net config settings are usually left to individual developers and mostly tackled by calling a static config manager or a wrapper.  
   
 ```csharp
 // The old method
@@ -16,10 +16,10 @@ var apiId = Guid.Parse(_configManager.AppSetting("ApiId"));
 In both cases the resulting value is a string and will have to be converted to the type of variable if different.
 
 
-This type of manipulation shouldn't be left to the individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
+Ideally this type of manipulation shouldn't be left to the individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
 
 
-A better way would be a class like the Settings class in code below that checks for the availability of the settings and sets them up as needed.  
+A better way would be a class like the ```Settings``` class in code below that checks for the availability of the settings and sets them up as needed.  
 
 
 This can either injected or preferably just called on startup by the IOC container and the required value injected into the controller or service that needs them.  
