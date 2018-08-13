@@ -3,7 +3,7 @@ layout: post
 title: Responsible Settings
 ---
 
-The .Net config settings are usually left to individual developers and mostly tackled by calling a static config manager or a wrapper.  
+The .Net config settings are usually left to individual teams/developers and mostly tackled by calling a static config manager or a wrapper where the setting is required.  
   
 ```csharp
 // The old method
@@ -13,7 +13,7 @@ var timout = int.Parse(ConfigurationManager.AppSettings["Timeout"]);
 var apiId = Guid.Parse(_configManager.AppSetting("ApiId"));
 ```
 
-In both cases the resulting string value has to be converted to the type of variable if different.
+As shown above, the resulting string value has to be converted to the type of variable if different.
 
 
 Ideally this manipulation shouldn't be left to individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
