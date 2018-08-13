@@ -6,7 +6,7 @@ title: Responsible Settings
 The .Net config settings are usually left to individual teams/developers and mostly tackled by calling a static config manager or a wrapper where the setting is required.  
   
 ```csharp
-// The old method
+// The old way
 var timout = int.Parse(ConfigurationManager.AppSettings["Timeout"]);
 
 // Newer
