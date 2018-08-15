@@ -17,10 +17,12 @@ As shown above, the resulting string value has to be converted to the type of va
 
 
 Ideally this manipulation shouldn't be left to individual classes as they get littered with app setting names, methods to parse the setting values and tackling what to do if any setting is missing or invalid.  
+There is also the possibility that a setting not required immediately would be missing or misconfigured when the code is deployed to live.  
 
 
-A better way would be a class like the ```Settings``` class in code below that validates availability of the settings and sets them up as needed.   
-This is for **.Net Core** but similar class can be created for other versions of .Net.
+A better way would be a class like the ```Settings``` class in code below that validates the settings and sets them up as needed.   
+This is for **.Net Core** but similar class can be created for other versions of .Net.   
+[Code on github](https://github.com/kiran-singh/ResponsibleSettings/)   
 
 
 This class can be either injected or preferably just called on startup by the IOC container and the required config value injected into the controller or service that needs them.  
@@ -31,14 +33,14 @@ __The constructor uses reflection to get the names & types of the its class' pro
 ```csharp
 public class Settings
 {
-    public Settings(IConfiguration dict) 
+    public Settings(IConfiguration configuration) 
     {
         var declaredProperties = 
             GetType().GetTypeInfo().DeclaredProperties.ToList();
 
         var missingSettings = 
             (from propertyInfo in declaredProperties
-            where string.IsNullOrWhiteSpace(dict[propertyInfo.Name])
+            where string.IsNullOrWhiteSpace(configuration[propertyInfo.Name])
             select propertyInfo.Name).ToList();
 
         if (missingSettings.Any())
@@ -49,35 +51,27 @@ public class Settings
 
         foreach (var propertyInfo in declaredProperties)
         {
+            var configValue = configuration[propertyInfo.Name];
+
             if (propertyInfo.PropertyType == typeof(int))
             {
-                var value = dict[propertyInfo.Name].ToInt();
-                
-                if(value == default(int))
-                    invalidSettings.Add(propertyInfo.Name);
-                else
+                if(int.TryParse(configValue, out var value))
                     propertyInfo.SetValue(this, value);
-            }
-            
+                else
+                    invalidSettings.Add(propertyInfo.Name);
+            }  
             // Parse other types required: 
             // else if(propertyInfo.PropertyType == typeof(bool))...
             // else if(propertyInfo.PropertyType == typeof(Guid))...
             // ...
 
-            else
-            {
-                var value = dict[propertyInfo.Name];
-                
-                if(string.IsNullOrWhiteSpace(value))
-                    invalidSettings.Add(propertyInfo.Name);
-                else
-                    propertyInfo.SetValue(this, value);
-            }
-            
-            if(invalidSettings.Any())
+            else // strings
+                propertyInfo.SetValue(this, configValue);
+        }
+
+        if(invalidSettings.Any())
                 throw new Exception(
                     $"Cannot start application. Invalid environment variables: {string.Join(", ", invalidSettings)}");
-        }
     }
 
     public Guid ApiId { get; set; }
@@ -90,14 +84,4 @@ public class Settings
 }
 ```
 
-```ToInt()``` is a string extension method that uses the ```TryParse()``` method to parse the integer safely as shown below.   
-Similar methods (```ToBool()```, ```ToGuid()``` etc) can be used for other value types.
-```csharp
-public static int ToInt(this string input)
-{
-    int.TryParse(input, out var result);
-
-    return result;
-}
-```
-The above code ensures that the application starts up only when its application settings are setup with the valid values and avoids code duplication, usage of setting names into classes etc.
+The above code ensures that the application starts up only when its application settings are setup with the valid values and avoids anti-patterns like code duplication, usage of setting names into classes etc.
