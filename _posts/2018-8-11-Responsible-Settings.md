@@ -21,14 +21,14 @@ There is also the possibility that a setting not required immediately would be m
 
 
 A better way would be a class like the ```Settings``` class in code below that validates the settings and sets them up as needed.   
-This is for **.Net Core** but similar class can be created for other versions of .Net.   
-[Code on github](https://github.com/kiran-singh/ResponsibleSettings/)   
+This is for **.Net Core** but similar class can be created for other versions of .Net.    
 
 
 This class can be either injected or preferably just called on startup by the IOC container and the required config value injected into the controller or service that needs them.  
 
 
-__The constructor uses reflection to get the names & types of the its class' properties and throws an exception if any setting is missing or if any of the values are default for the type.__
+__The constructor uses reflection to get the names & types of the its class' properties and throws an exception if any setting is missing or if any of the values are default for the type.__  
+The full code is [here on github](https://github.com/kiran-singh/ResponsibleSettings/)  
 
 ```csharp
 public class Settings
@@ -65,13 +65,13 @@ public class Settings
             // else if(propertyInfo.PropertyType == typeof(Guid))...
             // ...
 
-            else // strings
+            else 
                 propertyInfo.SetValue(this, configValue);
         }
 
         if(invalidSettings.Any())
-                throw new Exception(
-                    $"Cannot start application. Invalid environment variables: {string.Join(", ", invalidSettings)}");
+            throw new Exception(
+                $"Cannot start application. Invalid environment variables: {string.Join(", ", invalidSettings)}");
     }
 
     public Guid ApiId { get; set; }
