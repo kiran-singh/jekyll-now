@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Responsible Settings
+published: false
 ---
 
 The .Net config settings are usually left to individual teams/developers and mostly tackled by calling a static config manager or a wrapper where the setting is required.  
